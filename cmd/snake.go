@@ -14,7 +14,9 @@ func render(game snake.Game, directionChan chan int) {
 	for {
 		select {
 		case newDirection := <-directionChan:
-			game.State.Direction = newDirection
+			if game.ShouldUpdateDirection(newDirection) {
+				game.State.Direction = newDirection
+			}
 			if !game.State.IsOver {
 				game.Move()
 			}

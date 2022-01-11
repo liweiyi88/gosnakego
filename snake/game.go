@@ -46,6 +46,26 @@ func NewGame(board *Board) *Game {
 	}
 }
 
+func (g *Game) ShouldUpdateDirection(direction int) bool {
+	if g.State.Direction == Left && direction != Right {
+		return true
+	}
+
+	if g.State.Direction == Up && direction != Down {
+		return true
+	}
+
+	if g.State.Direction == Down && direction != Up {
+		return true
+	}
+
+	if g.State.Direction == Right && direction != Left {
+		return true
+	}
+
+	return false
+}
+
 func (g *Game) over() {
 	g.State.IsOver = true
 	fmt.Println("Game over")
