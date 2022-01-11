@@ -1,6 +1,7 @@
 package snake
 
 import (
+	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"log"
 )
@@ -13,6 +14,7 @@ const (
 )
 
 type State struct {
+	IsOver bool
 	Direction int
 }
 
@@ -39,6 +41,11 @@ func NewGame(board *Board) *Game{
 		State: State{Direction: Up},
 		Screen: screen,
 	}
+}
+
+func (g *Game) over() {
+	g.State.IsOver = true
+	fmt.Println("Game over")
 }
 
 func (g *Game) createScreen() {
@@ -75,23 +82,39 @@ func (g *Game) Update() {
 }
 
 func (g *Game) MoveSnakeLeft()  {
-	g.Snake.MoveLeft()
-	g.Update()
+	if g.Snake.canMove(g.Board, Left) {
+		g.Snake.MoveLeft()
+		g.Update()
+	} else {
+		g.over()
+	}
 }
 
 func (g *Game) MoveSnakeRight()  {
-	g.Snake.MoveRight()
-	g.Update()
+	if g.Snake.canMove(g.Board, Right) {
+		g.Snake.MoveRight()
+		g.Update()
+	} else {
+		g.over()
+	}
 }
 
 func (g *Game) MoveSnakeUp()  {
-	g.Snake.MoveUp()
-	g.Update()
+	if g.Snake.canMove(g.Board, Up) {
+		g.Snake.MoveUp()
+		g.Update()
+	} else {
+		g.over()
+	}
 }
 
 func (g *Game) MoveSnakeDown()  {
-	g.Snake.MoveDown()
-	g.Update()
+	if g.Snake.canMove(g.Board, Down) {
+		g.Snake.MoveDown()
+		g.Update()
+	} else {
+		g.over()
+	}
 }
 
 func (g *Game) drawSnake() {
@@ -126,8 +149,4 @@ func (g *Game) drawBoard() {
 	for i := 1; i < width; i++ {
 		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
 	}
-}
-
-func (g *Game) End()  {
-	g.Screen.Fini()
 }

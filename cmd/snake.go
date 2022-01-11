@@ -11,7 +11,7 @@ func main() {
 	game.Init()
 
 	quit := func() {
-		game.End()
+		game.Screen.Fini()
 		os.Exit(0)
 	}
 
@@ -27,20 +27,22 @@ func main() {
 				quit()
 			}
 
-			if event.Key() == tcell.KeyLeft {
-				game.MoveSnakeLeft()
-			}
+			if !game.State.IsOver {
+				if event.Key() == tcell.KeyLeft {
+					game.MoveSnakeLeft()
+				}
 
-			if event.Key() == tcell.KeyRight {
-				game.MoveSnakeRight()
-			}
+				if event.Key() == tcell.KeyRight {
+					game.MoveSnakeRight()
+				}
 
-			if event.Key() == tcell.KeyDown {
-				game.MoveSnakeDown()
-			}
+				if event.Key() == tcell.KeyDown {
+					game.MoveSnakeDown()
+				}
 
-			if event.Key() == tcell.KeyUp {
-				game.MoveSnakeUp()
+				if event.Key() == tcell.KeyUp {
+					game.MoveSnakeUp()
+				}
 			}
 		}
 	}
