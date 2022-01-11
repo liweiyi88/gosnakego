@@ -14,18 +14,18 @@ const (
 )
 
 type State struct {
-	IsOver bool
+	IsOver    bool
 	Direction int
 }
 
 type Game struct {
-	State State
+	State  State
 	Board  *Board
-	Snake *Snake
+	Snake  *Snake
 	Screen tcell.Screen
 }
 
-func NewGame(board *Board) *Game{
+func NewGame(board *Board) *Game {
 	screen, err := tcell.NewScreen()
 
 	if err != nil {
@@ -39,9 +39,9 @@ func NewGame(board *Board) *Game{
 	screen.SetStyle(defStyle)
 
 	return &Game{
-		Board: board,
-		Snake: NewSnake(),
-		State: State{Direction: Up},
+		Board:  board,
+		Snake:  NewSnake(),
+		State:  State{Direction: Up},
 		Screen: screen,
 	}
 }
@@ -58,7 +58,7 @@ func (g *Game) Run() {
 	g.Screen.Show()
 }
 
-func (g *Game) Move()  {
+func (g *Game) Move() {
 	if g.Snake.canMove(g.Board, g.State.Direction) {
 		g.Snake.Move(g.State.Direction)
 		g.Run()

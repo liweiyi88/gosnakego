@@ -3,19 +3,17 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"gosnakego/snake"
-	"log"
 	"os"
 	"time"
 )
 
 func render(game snake.Game, directionChan chan int) {
-	log.Println("ticking...")
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
-		case newDirection := <- directionChan:
+		case newDirection := <-directionChan:
 			game.State.Direction = newDirection
 			if !game.State.IsOver {
 				game.Move()

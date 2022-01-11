@@ -13,7 +13,7 @@ func (s *Snake) canMove(board *Board, direction int) bool {
 	nextHeadPosition, err := s.nextHeadPosition(direction)
 
 	// If current body contains next head position, then return false.
-	for _, position :=range s.Body {
+	for _, position := range s.Body {
 		if nextHeadPosition == position {
 			return false
 		}
@@ -44,13 +44,13 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinates, error) {
 
 	switch direction {
 	case Up:
-		head = NewCoordinates(s.Body[0].x, s.Body[0].y - 1)
+		head = NewCoordinates(s.Body[0].x, s.Body[0].y-1)
 	case Left:
-		head = NewCoordinates(s.Body[0].x - 1, s.Body[0].y)
+		head = NewCoordinates(s.Body[0].x-1, s.Body[0].y)
 	case Right:
-		head = NewCoordinates(s.Body[0].x + 1, s.Body[0].y)
+		head = NewCoordinates(s.Body[0].x+1, s.Body[0].y)
 	case Down:
-		head = NewCoordinates(s.Body[0].x, s.Body[0].y + 1)
+		head = NewCoordinates(s.Body[0].x, s.Body[0].y+1)
 	default:
 		err = errors.New("error: invalid direction")
 	}
@@ -58,7 +58,7 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinates, error) {
 	return head, err
 }
 
-func (s *Snake) Move(direction int)  {
+func (s *Snake) Move(direction int) {
 	newBody := make([]Coordinates, 0)
 
 	for i := 0; i < len(s.Body); i++ {
@@ -72,7 +72,7 @@ func (s *Snake) Move(direction int)  {
 				return
 			}
 		} else {
-			c = NewCoordinates(s.Body[i - 1].x, s.Body[i - 1].y)
+			c = NewCoordinates(s.Body[i-1].x, s.Body[i-1].y)
 		}
 
 		newBody = append(newBody, c)
@@ -81,13 +81,13 @@ func (s *Snake) Move(direction int)  {
 	s.Body = newBody
 }
 
-func NewSnake() *Snake{
+func NewSnake() *Snake {
 	body := make([]Coordinates, 0)
-	body = append(body, NewCoordinates(10,7))
-	body = append(body, NewCoordinates(10,8))
-	body = append(body, NewCoordinates(10,9))
-	body = append(body, NewCoordinates(10,10))
-	body = append(body, NewCoordinates(9,10))
+	body = append(body, NewCoordinates(10, 7))
+	body = append(body, NewCoordinates(10, 8))
+	body = append(body, NewCoordinates(10, 9))
+	body = append(body, NewCoordinates(10, 10))
+	body = append(body, NewCoordinates(9, 10))
 
 	return &Snake{Body: body}
 }

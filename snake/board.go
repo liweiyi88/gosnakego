@@ -1,7 +1,7 @@
 package snake
 
 type Board struct {
-	width int
+	width  int
 	height int
 }
 
