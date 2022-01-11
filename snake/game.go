@@ -35,6 +35,9 @@ func NewGame(board *Board) *Game{
 		log.Fatalf("%+v", err)
 	}
 
+	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	screen.SetStyle(defStyle)
+
 	return &Game{
 		Board: board,
 		Snake: NewSnake(),
@@ -48,25 +51,6 @@ func (g *Game) over() {
 	fmt.Println("Game over")
 }
 
-func (g *Game) createScreen() {
-	screen, err := tcell.NewScreen()
-	g.Screen = screen
-
-	if err != nil {
-		log.Fatalf("%+v", err)
-	}
-	if err := g.Screen.Init(); err != nil {
-		log.Fatalf("%+v", err)
-	}
-
-	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	g.Screen.SetStyle(defStyle)
-}
-
-func (g *Game) Init()  {
-	g.createScreen()
-}
-
 func (g *Game) Run() {
 	g.Screen.Clear()
 	g.drawBoard()
@@ -74,44 +58,10 @@ func (g *Game) Run() {
 	g.Screen.Show()
 }
 
-func (g *Game) Update() {
-	g.Screen.Clear()
-	g.drawBoard()
-	g.drawSnake()
-	g.Screen.Show()
-}
-
-func (g *Game) MoveSnakeLeft()  {
-	if g.Snake.canMove(g.Board, Left) {
-		g.Snake.MoveLeft()
-		g.Update()
-	} else {
-		g.over()
-	}
-}
-
-func (g *Game) MoveSnakeRight()  {
-	if g.Snake.canMove(g.Board, Right) {
-		g.Snake.MoveRight()
-		g.Update()
-	} else {
-		g.over()
-	}
-}
-
-func (g *Game) MoveSnakeUp()  {
-	if g.Snake.canMove(g.Board, Up) {
-		g.Snake.MoveUp()
-		g.Update()
-	} else {
-		g.over()
-	}
-}
-
-func (g *Game) MoveSnakeDown()  {
-	if g.Snake.canMove(g.Board, Down) {
-		g.Snake.MoveDown()
-		g.Update()
+func (g *Game) Move()  {
+	if g.Snake.canMove(g.Board, g.State.Direction) {
+		g.Snake.Move(g.State.Direction)
+		g.Run()
 	} else {
 		g.over()
 	}

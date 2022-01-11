@@ -3,47 +3,70 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"gosnakego/snake"
+	"log"
 	"os"
+	"time"
 )
 
-func main() {
-	game := snake.NewGame(snake.NewBoard(50, 20))
-	game.Init()
-
-	quit := func() {
-		game.Screen.Fini()
-		os.Exit(0)
-	}
+func render(game snake.Game, directionChan chan int) {
+	log.Println("ticking...")
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
 	for {
-		game.Run()
-		event := game.Screen.PollEvent()
+		select {
+		case newDirection := <- directionChan:
+			game.State.Direction = newDirection
+			if !game.State.IsOver {
+				game.Move()
+			}
+		case <-ticker.C:
+			if !game.State.IsOver {
+				game.Move()
+			}
+		}
+	}
+}
 
-		switch event := event.(type) {
+func eventLoop(game snake.Game, directionChan chan int) {
+	defer close(directionChan)
+
+	for {
+		switch event := game.Screen.PollEvent().(type) {
 		case *tcell.EventResize:
 			game.Screen.Sync()
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyCtrlC {
-				quit()
+				game.Screen.Fini()
+				os.Exit(0)
 			}
 
 			if !game.State.IsOver {
 				if event.Key() == tcell.KeyLeft {
-					game.MoveSnakeLeft()
+					directionChan <- snake.Left
 				}
 
 				if event.Key() == tcell.KeyRight {
-					game.MoveSnakeRight()
+					directionChan <- snake.Right
 				}
 
 				if event.Key() == tcell.KeyDown {
-					game.MoveSnakeDown()
+					directionChan <- snake.Down
 				}
 
 				if event.Key() == tcell.KeyUp {
-					game.MoveSnakeUp()
+					directionChan <- snake.Up
 				}
 			}
 		}
 	}
+}
+
+func main() {
+	directionChan := make(chan int, 10)
+
+	game := snake.NewGame(snake.NewBoard(50, 20))
+
+	go render(*game, directionChan)
+	eventLoop(*game, directionChan)
 }

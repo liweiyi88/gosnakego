@@ -9,18 +9,6 @@ type Snake struct {
 	Body []Coordinates
 }
 
-func (s *Snake) MoveUp() {
-	s.move(Up)
-}
-
-func (s *Snake)  MoveDown() {
-	s.move(Down)
-}
-
-func (s *Snake)  MoveLeft() {
-	s.move(Left)
-}
-
 func (s *Snake) canMove(board *Board, direction int) bool {
 	nextHeadPosition, err := s.nextHeadPosition(direction)
 
@@ -50,10 +38,6 @@ func (s *Snake) canMove(board *Board, direction int) bool {
 	return true
 }
 
-func (s *Snake)  MoveRight() {
-	s.move(Right)
-}
-
 func (s *Snake) nextHeadPosition(direction int) (Coordinates, error) {
 	var head Coordinates
 	var err error
@@ -74,7 +58,7 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinates, error) {
 	return head, err
 }
 
-func (s *Snake) move(direction int)  {
+func (s *Snake) Move(direction int)  {
 	newBody := make([]Coordinates, 0)
 
 	for i := 0; i < len(s.Body); i++ {
