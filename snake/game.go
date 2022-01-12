@@ -15,6 +15,7 @@ const (
 )
 
 type State struct {
+	IsStart   bool
 	IsOver    bool
 	Direction int
 	Speed time.Duration
@@ -40,12 +41,16 @@ func NewGame(board *Board) *Game {
 	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	screen.SetStyle(defStyle)
 
-	return &Game{
+	game := &Game{
 		Board:  board,
 		Snake:  NewSnake(),
 		State:  State{Direction: Up, Speed: time.Millisecond * 200},
 		Screen: screen,
 	}
+
+	game.updateScreen()
+
+	return game
 }
 
 func (g *Game) shouldUpdateDirection(direction int) bool {
@@ -72,10 +77,20 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 	return false
 }
 
+func (g *Game) drawLoading() {
+	if !g.State.IsStart {
+		g.drawText(g.Board.width / 2 - 12, g.Board.height / 2, g.Board.width / 2 + 13, g.Board.height / 2, "PRESS <ENTER> TO CONTINUE")
+	}
+}
+
+func (g *Game) drawEnding() {
+	if g.State.IsOver {
+		g.drawText(g.Board.width / 2 - 5, g.Board.height / 2, g.Board.width / 2 + 10, g.Board.height / 2, "Game over")
+	}
+}
+
 func (g *Game) over() {
 	g.State.IsOver = true
-	g.drawText(g.Board.width / 2 - 5, g.Board.height / 2, g.Board.width / 2 + 10, g.Board.height / 2, "Game over")
-	g.Screen.Show()
 }
 
 func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
@@ -133,14 +148,20 @@ func (g *Game) drawSnake() {
 	}
 }
 
-func (g *Game) run() {
+func (g *Game) Start() {
+	g.State.IsStart = true
+}
+
+func (g *Game) updateScreen() {
 	g.Screen.Clear()
+	g.drawLoading()
 	g.drawBoard()
 	g.drawSnake()
+	g.drawEnding()
 	g.Screen.Show()
 }
 
-func (g *Game) Start(directionChan chan int) {
+func (g *Game) Run(directionChan chan int) {
 	ticker := time.NewTicker(g.State.Speed)
 	defer ticker.Stop()
 
@@ -151,17 +172,18 @@ func (g *Game) Start(directionChan chan int) {
 				g.State.Direction = newDirection
 			}
 		case <-ticker.C:
-			if !g.State.IsOver {
-				g.Move()
+			if !g.State.IsOver && g.State.IsStart {
+				g.move()
 			}
+
+			g.updateScreen()
 		}
 	}
 }
 
-func (g *Game) Move() {
+func (g *Game) move() {
 	if g.Snake.canMove(g.Board, g.State.Direction) {
 		g.Snake.Move(g.State.Direction)
-		g.run()
 	} else {
 		g.over()
 	}

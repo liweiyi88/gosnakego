@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func eventLoop(game snake.Game, directionChan chan int) {
+func eventLoop(game *snake.Game, directionChan chan int) {
 	defer close(directionChan)
 
 	for {
@@ -17,6 +17,10 @@ func eventLoop(game snake.Game, directionChan chan int) {
 			if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyCtrlC {
 				game.Screen.Fini()
 				os.Exit(0)
+			}
+
+			if !game.State.IsStart && event.Key() == tcell.KeyEnter {
+				game.Start()
 			}
 
 			if !game.State.IsOver {
@@ -44,6 +48,6 @@ func main() {
 	directionChan := make(chan int, 10)
 	game := snake.NewGame(snake.NewBoard(50, 20))
 
-	go game.Start(directionChan)
-	eventLoop(*game, directionChan)
+	go game.Run(directionChan)
+	eventLoop(game, directionChan)
 }
