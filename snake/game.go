@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"log"
+	"time"
 )
 
 const (
@@ -16,6 +17,7 @@ const (
 type State struct {
 	IsOver    bool
 	Direction int
+	Speed time.Duration
 }
 
 type Game struct {
@@ -41,12 +43,16 @@ func NewGame(board *Board) *Game {
 	return &Game{
 		Board:  board,
 		Snake:  NewSnake(),
-		State:  State{Direction: Up},
+		State:  State{Direction: Up, Speed: time.Millisecond * 200},
 		Screen: screen,
 	}
 }
 
-func (g *Game) ShouldUpdateDirection(direction int) bool {
+func (g *Game) shouldUpdateDirection(direction int) bool {
+	if g.State.Direction == direction {
+		return false
+	}
+
 	if g.State.Direction == Left && direction != Right {
 		return true
 	}
@@ -68,29 +74,24 @@ func (g *Game) ShouldUpdateDirection(direction int) bool {
 
 func (g *Game) over() {
 	g.State.IsOver = true
-	fmt.Println("Game over")
-}
-
-func (g *Game) Run() {
-	g.Screen.Clear()
-	g.drawBoard()
-	g.drawSnake()
+	g.drawText(g.Board.width / 2 - 5, g.Board.height / 2, g.Board.width / 2 + 10, g.Board.height / 2, "Game over")
 	g.Screen.Show()
 }
 
-func (g *Game) Move() {
-	if g.Snake.canMove(g.Board, g.State.Direction) {
-		g.Snake.Move(g.State.Direction)
-		g.Run()
-	} else {
-		g.over()
-	}
-}
-
-func (g *Game) drawSnake() {
-	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
-	for _, coordinates := range g.Snake.Body {
-		g.Screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
+func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
+	row := y1
+	col := x1
+	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	for _, r := range []rune(text) {
+		g.Screen.SetContent(col, row, r, nil, style)
+		col++
+		if col >= x2 {
+			row++
+			col = x1
+		}
+		if row > y2 {
+			break
+		}
 	}
 }
 
@@ -118,5 +119,50 @@ func (g *Game) drawBoard() {
 
 	for i := 1; i < width; i++ {
 		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
+	}
+
+	g.drawText(1, height + 1, width, height + 10, fmt.Sprintf("Score:%d", 100))
+	g.drawText(1, height + 3, width, height + 10, "Press ESC or Ctrl+C to quit")
+	g.drawText(1, height + 4, width, height + 10, "Press arrow keys to control direction")
+}
+
+func (g *Game) drawSnake() {
+	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
+	for _, coordinates := range g.Snake.Body {
+		g.Screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
+	}
+}
+
+func (g *Game) run() {
+	g.Screen.Clear()
+	g.drawBoard()
+	g.drawSnake()
+	g.Screen.Show()
+}
+
+func (g *Game) Start(directionChan chan int) {
+	ticker := time.NewTicker(g.State.Speed)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case newDirection := <-directionChan:
+			if g.shouldUpdateDirection(newDirection) {
+				g.State.Direction = newDirection
+			}
+		case <-ticker.C:
+			if !g.State.IsOver {
+				g.Move()
+			}
+		}
+	}
+}
+
+func (g *Game) Move() {
+	if g.Snake.canMove(g.Board, g.State.Direction) {
+		g.Snake.Move(g.State.Direction)
+		g.run()
+	} else {
+		g.over()
 	}
 }
