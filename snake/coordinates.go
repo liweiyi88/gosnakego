@@ -1,10 +1,9 @@
 package snake
 
-type Coordinates struct {
-	x int
-	y int
+type Coordinate struct {
+	x, y int
 }
 
-func NewCoordinates(x, y int) Coordinates {
-	return Coordinates{x, y}
+func NewCoordinates(x, y int) Coordinate {
+	return Coordinate{x, y}
 }

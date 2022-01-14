@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gdamore/tcell/v2"
 	"log"
+	"math/rand"
 	"time"
 )
 
@@ -14,18 +15,34 @@ const (
 	Down
 )
 
+type Apple struct {
+	Coordinate
+}
+
 type State struct {
 	IsStart   bool
 	IsOver    bool
 	Direction int
-	Speed time.Duration
+	Speed     time.Duration
 }
 
 type Game struct {
 	State  State
+	Apple  *Apple
 	Board  *Board
 	Snake  *Snake
 	Screen tcell.Screen
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+func newApple(x int, y int) *Apple {
+	return &Apple{Coordinate{
+		x,
+		y,
+	}}
 }
 
 func NewGame(board *Board) *Game {
@@ -44,13 +61,27 @@ func NewGame(board *Board) *Game {
 	game := &Game{
 		Board:  board,
 		Snake:  NewSnake(),
-		State:  State{Direction: Up, Speed: time.Millisecond * 200},
+		State:  State{Direction: Up, Speed: time.Millisecond * 100},
 		Screen: screen,
 	}
 
+	game.setNewApplePosition()
 	game.updateScreen()
 
 	return game
+}
+
+func (g *Game) setNewApplePosition() {
+	var availableCoordinates []Coordinate
+
+	for _, coordinate := range g.Board.ToCoordinates() {
+		if !g.Snake.Contains(coordinate) {
+			availableCoordinates = append(availableCoordinates, coordinate)
+		}
+	}
+
+	applePosition := availableCoordinates[rand.Intn(len(availableCoordinates))]
+	g.Apple = newApple(applePosition.x, applePosition.y)
 }
 
 func (g *Game) shouldUpdateDirection(direction int) bool {
@@ -79,13 +110,13 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 
 func (g *Game) drawLoading() {
 	if !g.State.IsStart {
-		g.drawText(g.Board.width / 2 - 12, g.Board.height / 2, g.Board.width / 2 + 13, g.Board.height / 2, "PRESS <ENTER> TO CONTINUE")
+		g.drawText(g.Board.width/2-12, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, "PRESS <ENTER> TO CONTINUE")
 	}
 }
 
 func (g *Game) drawEnding() {
 	if g.State.IsOver {
-		g.drawText(g.Board.width / 2 - 5, g.Board.height / 2, g.Board.width / 2 + 10, g.Board.height / 2, "Game over")
+		g.drawText(g.Board.width/2-5, g.Board.height/2, g.Board.width/2+10, g.Board.height/2, "Game over")
 	}
 }
 
@@ -108,6 +139,11 @@ func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 			break
 		}
 	}
+}
+
+func (g *Game) drawApple() {
+	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
+	g.Screen.SetContent(g.Apple.x, g.Apple.y, '', nil, style)
 }
 
 func (g *Game) drawBoard() {
@@ -136,9 +172,9 @@ func (g *Game) drawBoard() {
 		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
 	}
 
-	g.drawText(1, height + 1, width, height + 10, fmt.Sprintf("Score:%d", 100))
-	g.drawText(1, height + 3, width, height + 10, "Press ESC or Ctrl+C to quit")
-	g.drawText(1, height + 4, width, height + 10, "Press arrow keys to control direction")
+	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", 100))
+	g.drawText(1, height+3, width, height+10, "Press ESC or Ctrl+C to quit")
+	g.drawText(1, height+4, width, height+10, "Press arrow keys to control direction")
 }
 
 func (g *Game) drawSnake() {
@@ -148,17 +184,31 @@ func (g *Game) drawSnake() {
 	}
 }
 
-func (g *Game) Start() {
-	g.State.IsStart = true
+func (g *Game) move() {
+	if g.Snake.canMove(g.Board, g.State.Direction) {
+		g.Snake.Move(g.State.Direction)
+
+		if g.Snake.CanEat(g.Apple) {
+			g.Snake.Eat(g.Apple)
+			g.setNewApplePosition()
+		}
+	} else {
+		g.over()
+	}
 }
 
 func (g *Game) updateScreen() {
 	g.Screen.Clear()
 	g.drawLoading()
+	g.drawApple()
 	g.drawBoard()
 	g.drawSnake()
 	g.drawEnding()
 	g.Screen.Show()
+}
+
+func (g *Game) Start() {
+	g.State.IsStart = true
 }
 
 func (g *Game) Run(directionChan chan int) {
@@ -178,13 +228,5 @@ func (g *Game) Run(directionChan chan int) {
 
 			g.updateScreen()
 		}
-	}
-}
-
-func (g *Game) move() {
-	if g.Snake.canMove(g.Board, g.State.Direction) {
-		g.Snake.Move(g.State.Direction)
-	} else {
-		g.over()
 	}
 }
