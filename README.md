@@ -11,9 +11,15 @@ Windows: gosnakego_windows_amd64
 MacOS: gosnakego_darwin_amd64  
 Linux: gosnakego_linux_amd64
 
-For Linux and MacOS, you can also run the following command to download the binary.
+For MacOS, you can also run the following command to download the binary.
 ```
 $ wget https://github.com/liweiyi88/gosnakego/releases/download/v0.1/gosnakego_darwin_amd64 -O /usr/local/bin/gosnakego
+$ chmod +x /usr/local/bin/gosnakego
+```
+
+For Linux, you can also run the following command to download the binary.
+```
+$ wget https://github.com/liweiyi88/gosnakego/releases/download/v0.1/gosnakego_linux_amd64 -O /usr/local/bin/gosnakego
 $ chmod +x /usr/local/bin/gosnakego
 ```
 
