@@ -24,6 +24,7 @@ type State struct {
 	IsOver    bool
 	Direction int
 	Speed     time.Duration
+	Score     int
 }
 
 type Game struct {
@@ -172,7 +173,7 @@ func (g *Game) drawBoard() {
 		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
 	}
 
-	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", 100))
+	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", g.State.Score))
 	g.drawText(1, height+3, width, height+10, "Press ESC or Ctrl+C to quit")
 	g.drawText(1, height+4, width, height+10, "Press arrow keys to control direction")
 }
@@ -190,6 +191,7 @@ func (g *Game) move() {
 
 		if g.Snake.CanEat(g.Apple) {
 			g.Snake.Eat(g.Apple)
+			g.State.Score++
 			g.setNewApplePosition()
 		}
 	} else {
