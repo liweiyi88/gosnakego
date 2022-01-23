@@ -1,4 +1,4 @@
-module gosnakego
+module github.com/liweiyi88/gosnakego
 
 go 1.17
 

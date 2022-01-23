@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gdamore/tcell/v2"
-	"gosnakego/snake"
+	"github.com/liweiyi88/gosnakego/snake"
 	"os"
 )
 
