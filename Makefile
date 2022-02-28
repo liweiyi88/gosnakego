@@ -1,4 +1,4 @@
-.PHONY: prepare install release
+.PHONY: install release
 
 ARTIFACTS_DIR=artifacts/${VERSION}
 GITHUB_USERNAME=liweiyi88
