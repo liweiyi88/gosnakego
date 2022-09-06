@@ -3,24 +3,18 @@ package main
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/liweiyi88/gosnakego/snake"
-	"os"
 )
 
 func eventLoop(game *snake.Game, directionChan chan int) {
 	defer close(directionChan)
 
 	for {
-		switch event := game.Screen.PollEvent().(type) {
+		switch event := game.PollEvent().(type) {
 		case *tcell.EventResize:
-			game.Lock()
-			game.Screen.Sync()
-			game.Unlock()
+			game.Resize()
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyCtrlC {
-				game.Lock()
-				game.Screen.Fini()
-				game.Unlock()
-				os.Exit(0)
+				game.Exit()
 			}
 
 			if !game.HasStarted() && event.Key() == tcell.KeyEnter {

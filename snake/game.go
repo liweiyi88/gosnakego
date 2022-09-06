@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
 
@@ -31,7 +32,7 @@ type Game struct {
 	Apple  *Apple
 	Board  *Board
 	Snake  *Snake
-	Screen tcell.Screen
+	screen tcell.Screen
 }
 
 func init() {
@@ -63,13 +64,30 @@ func NewGame(board *Board) *Game {
 		Snake:  NewSnake(),
 		direction: Up,
 		speed: time.Millisecond * 100,
-		Screen: screen,
+		screen: screen,
 	}
 
 	game.setNewApplePosition()
 	game.updateScreen()
 
 	return game
+}
+
+func (g *Game) PollEvent() tcell.Event {
+	return g.screen.PollEvent()
+}
+
+func (g *Game) Resize() {
+	g.Lock()
+	g.screen.Sync()
+	g.Unlock()
+}
+
+func (g *Game) Exit() {
+	g.Lock()
+	g.screen.Fini()
+	g.Unlock()
+	os.Exit(0)
 }
 
 func (g *Game) setNewApplePosition() {
@@ -138,7 +156,7 @@ func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 	col := x1
 	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	for _, r := range text {
-		g.Screen.SetContent(col, row, r, nil, style)
+		g.screen.SetContent(col, row, r, nil, style)
 		col++
 		if col >= x2 {
 			row++
@@ -152,33 +170,33 @@ func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 
 func (g *Game) drawApple() {
 	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
-	g.Screen.SetContent(g.Apple.x, g.Apple.y, '', nil, style)
+	g.screen.SetContent(g.Apple.x, g.Apple.y, '', nil, style)
 }
 
 func (g *Game) drawBoard() {
 	width, height := g.Board.width, g.Board.height
 
 	boardStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	g.Screen.SetContent(0, 0, tcell.RuneULCorner, nil, boardStyle)
+	g.screen.SetContent(0, 0, tcell.RuneULCorner, nil, boardStyle)
 	for i := 1; i < width; i++ {
-		g.Screen.SetContent(i, 0, tcell.RuneHLine, nil, boardStyle)
+		g.screen.SetContent(i, 0, tcell.RuneHLine, nil, boardStyle)
 	}
-	g.Screen.SetContent(width, 0, tcell.RuneURCorner, nil, boardStyle)
+	g.screen.SetContent(width, 0, tcell.RuneURCorner, nil, boardStyle)
 
 	for i := 1; i < height; i++ {
-		g.Screen.SetContent(0, i, tcell.RuneVLine, nil, boardStyle)
+		g.screen.SetContent(0, i, tcell.RuneVLine, nil, boardStyle)
 	}
 
-	g.Screen.SetContent(0, height, tcell.RuneLLCorner, nil, boardStyle)
+	g.screen.SetContent(0, height, tcell.RuneLLCorner, nil, boardStyle)
 
 	for i := 1; i < height; i++ {
-		g.Screen.SetContent(width, i, tcell.RuneVLine, nil, boardStyle)
+		g.screen.SetContent(width, i, tcell.RuneVLine, nil, boardStyle)
 	}
 
-	g.Screen.SetContent(width, height, tcell.RuneLRCorner, nil, boardStyle)
+	g.screen.SetContent(width, height, tcell.RuneLRCorner, nil, boardStyle)
 
 	for i := 1; i < width; i++ {
-		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
+		g.screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
 	}
 
 	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", g.score))
@@ -189,7 +207,7 @@ func (g *Game) drawBoard() {
 func (g *Game) drawSnake() {
 	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
 	for _, coordinates := range g.Snake.Body {
-		g.Screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
+		g.screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
 	}
 }
 
@@ -208,13 +226,13 @@ func (g *Game) move() {
 }
 
 func (g *Game) updateScreen() {
-	g.Screen.Clear()
+	g.screen.Clear()
 	g.drawLoading()
 	g.drawApple()
 	g.drawBoard()
 	g.drawSnake()
 	g.drawEnding()
-	g.Screen.Show()
+	g.screen.Show()
 }
 
 func (g *Game) Start() {
