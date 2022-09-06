@@ -25,14 +25,14 @@ type Apple struct {
 type Game struct {
 	sync.Mutex
 	direction int
-	speed time.Duration
+	speed     time.Duration
 	isStart   bool
 	isOver    bool
-	score int
-	Apple  *Apple
-	Board  *Board
-	Snake  *Snake
-	screen tcell.Screen
+	score     int
+	Apple     *Apple
+	Board     *Board
+	Snake     *Snake
+	screen    tcell.Screen
 }
 
 func init() {
@@ -46,44 +46,13 @@ func newApple(x int, y int) *Apple {
 	}}
 }
 
-func NewGame(board *Board) *Game {
-	screen, err := tcell.NewScreen()
-
-	if err != nil {
-		log.Fatalf("%+v", err)
-	}
-	if err := screen.Init(); err != nil {
-		log.Fatalf("%+v", err)
-	}
-
-	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	screen.SetStyle(defStyle)
-
-	game := &Game{
-		Board:  board,
-		Snake:  NewSnake(),
-		direction: Up,
-		speed: time.Millisecond * 100,
-		screen: screen,
-	}
-
-	game.setNewApplePosition()
-	game.updateScreen()
-
-	return game
-}
-
-func (g *Game) PollEvent() tcell.Event {
-	return g.screen.PollEvent()
-}
-
-func (g *Game) Resize() {
+func (g *Game) resizeScreen() {
 	g.Lock()
 	g.screen.Sync()
 	g.Unlock()
 }
 
-func (g *Game) Exit() {
+func (g *Game) exit() {
 	g.Lock()
 	g.screen.Fini()
 	g.Unlock()
@@ -128,18 +97,18 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 }
 
 func (g *Game) drawLoading() {
-	if !g.HasStarted() {
+	if !g.hasStarted() {
 		g.drawText(g.Board.width/2-12, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, "PRESS <ENTER> TO CONTINUE")
 	}
 }
 
 func (g *Game) drawEnding() {
-	if g.HasEnded() {
+	if g.hasEnded() {
 		g.drawText(g.Board.width/2-5, g.Board.height/2, g.Board.width/2+10, g.Board.height/2, "Game over")
 	}
 }
 
-func (g *Game) HasEnded() bool {
+func (g *Game) hasEnded() bool {
 	g.Lock()
 	defer g.Unlock()
 	return g.isOver
@@ -235,13 +204,13 @@ func (g *Game) updateScreen() {
 	g.screen.Show()
 }
 
-func (g *Game) Start() {
+func (g *Game) start() {
 	g.Lock()
 	defer g.Unlock()
 	g.isStart = true
 }
 
-func (g *Game) HasStarted() bool {
+func (g *Game) hasStarted() bool {
 	g.Lock()
 	defer g.Unlock()
 	return g.isStart
@@ -260,11 +229,75 @@ func (g *Game) Run(directionChan chan int) {
 				g.Unlock()
 			}
 		case <-ticker.C:
-			if !g.HasEnded() && g.HasStarted() {
+			if !g.hasEnded() && g.hasStarted() {
 				g.move()
 			}
 
 			g.updateScreen()
 		}
 	}
+}
+
+func (g *Game) ReactToKeyBoardEvents(directionChan chan int) {
+	defer close(directionChan)
+
+	for {
+		switch event := g.screen.PollEvent().(type) {
+		case *tcell.EventResize:
+			g.resizeScreen()
+		case *tcell.EventKey:
+			if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyCtrlC {
+				g.exit()
+			}
+
+			if !g.hasStarted() && event.Key() == tcell.KeyEnter {
+				g.start()
+			}
+
+			if !g.hasEnded() {
+				if event.Key() == tcell.KeyLeft {
+					directionChan <- Left
+				}
+
+				if event.Key() == tcell.KeyRight {
+					directionChan <- Right
+				}
+
+				if event.Key() == tcell.KeyDown {
+					directionChan <- Down
+				}
+
+				if event.Key() == tcell.KeyUp {
+					directionChan <- Up
+				}
+			}
+		}
+	}
+}
+
+func NewGame(board *Board) *Game {
+	screen, err := tcell.NewScreen()
+
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+	if err := screen.Init(); err != nil {
+		log.Fatalf("%+v", err)
+	}
+
+	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
+	screen.SetStyle(defStyle)
+
+	game := &Game{
+		Board:     board,
+		Snake:     NewSnake(),
+		direction: Up,
+		speed:     time.Millisecond * 100,
+		screen:    screen,
+	}
+
+	game.setNewApplePosition()
+	game.updateScreen()
+
+	return game
 }
