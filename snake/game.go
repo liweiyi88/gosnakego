@@ -21,18 +21,13 @@ type Apple struct {
 	Coordinate
 }
 
-type State struct {
-	sync.Mutex
-	isStart   bool
-	isOver    bool
-	Direction int
-	Speed     time.Duration
-	Score     int
-}
-
 type Game struct {
 	sync.Mutex
-	State  State
+	direction int
+	speed time.Duration
+	isStart   bool
+	isOver    bool
+	score int
 	Apple  *Apple
 	Board  *Board
 	Snake  *Snake
@@ -66,7 +61,8 @@ func NewGame(board *Board) *Game {
 	game := &Game{
 		Board:  board,
 		Snake:  NewSnake(),
-		State:  State{Direction: Up, Speed: time.Millisecond * 100},
+		direction: Up,
+		speed: time.Millisecond * 100,
 		Screen: screen,
 	}
 
@@ -90,23 +86,23 @@ func (g *Game) setNewApplePosition() {
 }
 
 func (g *Game) shouldUpdateDirection(direction int) bool {
-	if g.State.Direction == direction {
+	if g.direction == direction {
 		return false
 	}
 
-	if g.State.Direction == Left && direction != Right {
+	if g.direction == Left && direction != Right {
 		return true
 	}
 
-	if g.State.Direction == Up && direction != Down {
+	if g.direction == Up && direction != Down {
 		return true
 	}
 
-	if g.State.Direction == Down && direction != Up {
+	if g.direction == Down && direction != Up {
 		return true
 	}
 
-	if g.State.Direction == Right && direction != Left {
+	if g.direction == Right && direction != Left {
 		return true
 	}
 
@@ -128,13 +124,13 @@ func (g *Game) drawEnding() {
 func (g *Game) HasEnded() bool {
 	g.Lock()
 	defer g.Unlock()
-	return g.State.isOver
+	return g.isOver
 }
 
 func (g *Game) over() {
 	g.Lock()
 	defer g.Unlock()
-	g.State.isOver = true
+	g.isOver = true
 }
 
 func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
@@ -185,7 +181,7 @@ func (g *Game) drawBoard() {
 		g.Screen.SetContent(i, height, tcell.RuneHLine, nil, boardStyle)
 	}
 
-	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", g.State.Score))
+	g.drawText(1, height+1, width, height+10, fmt.Sprintf("Score:%d", g.score))
 	g.drawText(1, height+3, width, height+10, "Press ESC or Ctrl+C to quit")
 	g.drawText(1, height+4, width, height+10, "Press arrow keys to control direction")
 }
@@ -198,12 +194,12 @@ func (g *Game) drawSnake() {
 }
 
 func (g *Game) move() {
-	if g.Snake.canMove(g.Board, g.State.Direction) {
-		g.Snake.Move(g.State.Direction)
+	if g.Snake.canMove(g.Board, g.direction) {
+		g.Snake.Move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
 			g.Snake.Eat(g.Apple)
-			g.State.Score++
+			g.score++
 			g.setNewApplePosition()
 		}
 	} else {
@@ -222,26 +218,28 @@ func (g *Game) updateScreen() {
 }
 
 func (g *Game) Start() {
-	g.State.Lock()
-	defer g.State.Unlock()
-	g.State.isStart = true
+	g.Lock()
+	defer g.Unlock()
+	g.isStart = true
 }
 
 func (g *Game) HasStarted() bool {
-	g.State.Lock()
-	defer g.State.Unlock()
-	return g.State.isStart
+	g.Lock()
+	defer g.Unlock()
+	return g.isStart
 }
 
 func (g *Game) Run(directionChan chan int) {
-	ticker := time.NewTicker(g.State.Speed)
+	ticker := time.NewTicker(g.speed)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case newDirection := <-directionChan:
 			if g.shouldUpdateDirection(newDirection) {
-				g.State.Direction = newDirection
+				g.Lock()
+				g.direction = newDirection
+				g.Unlock()
 			}
 		case <-ticker.C:
 			if !g.HasEnded() && g.HasStarted() {

@@ -12,10 +12,14 @@ func eventLoop(game *snake.Game, directionChan chan int) {
 	for {
 		switch event := game.Screen.PollEvent().(type) {
 		case *tcell.EventResize:
+			game.Lock()
 			game.Screen.Sync()
+			game.Unlock()
 		case *tcell.EventKey:
 			if event.Key() == tcell.KeyEscape || event.Key() == tcell.KeyCtrlC {
+				game.Lock()
 				game.Screen.Fini()
+				game.Unlock()
 				os.Exit(0)
 			}
 
