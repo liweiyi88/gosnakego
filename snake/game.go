@@ -39,6 +39,7 @@ func init() {
 	rand.Seed(time.Now().UnixNano())
 }
 
+// Create a new apple.
 func newApple(x int, y int) *Apple {
 	return &Apple{Coordinate{
 		x,
@@ -46,12 +47,14 @@ func newApple(x int, y int) *Apple {
 	}}
 }
 
+// Resize screen if terminal changed.
 func (g *Game) resizeScreen() {
 	g.Lock()
 	g.screen.Sync()
 	g.Unlock()
 }
 
+// Exit the game.
 func (g *Game) exit() {
 	g.Lock()
 	g.screen.Fini()
@@ -59,6 +62,7 @@ func (g *Game) exit() {
 	os.Exit(0)
 }
 
+// Set the new apple's position in the board.
 func (g *Game) setNewApplePosition() {
 	var availableCoordinates []Coordinate
 
@@ -72,6 +76,7 @@ func (g *Game) setNewApplePosition() {
 	g.Apple = newApple(applePosition.x, applePosition.y)
 }
 
+// Check if we need to change the direction based on the new direction
 func (g *Game) shouldUpdateDirection(direction int) bool {
 	if g.direction == direction {
 		return false
@@ -96,30 +101,35 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 	return false
 }
 
+// Display the loading screen.
 func (g *Game) drawLoading() {
 	if !g.hasStarted() {
 		g.drawText(g.Board.width/2-12, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, "PRESS <ENTER> TO CONTINUE")
 	}
 }
 
+// Display the ending screen.
 func (g *Game) drawEnding() {
 	if g.hasEnded() {
 		g.drawText(g.Board.width/2-5, g.Board.height/2, g.Board.width/2+10, g.Board.height/2, "Game over")
 	}
 }
 
+// Check if the game has ended.
 func (g *Game) hasEnded() bool {
 	g.Lock()
 	defer g.Unlock()
 	return g.isOver
 }
 
+// Update the game's state to over.
 func (g *Game) over() {
 	g.Lock()
 	defer g.Unlock()
 	g.isOver = true
 }
 
+// Display text in terminal
 func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 	row := y1
 	col := x1
@@ -137,11 +147,13 @@ func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 	}
 }
 
+// Display the apple in the board.
 func (g *Game) drawApple() {
 	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorRed)
 	g.screen.SetContent(g.Apple.x, g.Apple.y, '', nil, style)
 }
 
+// Display the game board.
 func (g *Game) drawBoard() {
 	width, height := g.Board.width, g.Board.height
 
@@ -173,6 +185,7 @@ func (g *Game) drawBoard() {
 	g.drawText(1, height+4, width, height+10, "Press arrow keys to control direction")
 }
 
+// Display the snake
 func (g *Game) drawSnake() {
 	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
 	for _, coordinates := range g.Snake.Body {
@@ -180,9 +193,11 @@ func (g *Game) drawSnake() {
 	}
 }
 
+// Move the snake and set apple in the board.
 func (g *Game) move() {
 	if g.Snake.canMove(g.Board, g.direction) {
-		g.Snake.Move(g.direction)
+		g.Snake.
+		Move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
 			g.Snake.Eat(g.Apple)
@@ -194,6 +209,7 @@ func (g *Game) move() {
 	}
 }
 
+// Update the game screen.
 func (g *Game) updateScreen() {
 	g.screen.Clear()
 	g.drawLoading()
@@ -204,18 +220,21 @@ func (g *Game) updateScreen() {
 	g.screen.Show()
 }
 
+// Update game's state to start.
 func (g *Game) start() {
 	g.Lock()
 	defer g.Unlock()
 	g.isStart = true
 }
 
+// Check if the game has started.
 func (g *Game) hasStarted() bool {
 	g.Lock()
 	defer g.Unlock()
 	return g.isStart
 }
 
+// Start the game.
 func (g *Game) Run(directionChan chan int) {
 	ticker := time.NewTicker(g.speed)
 	defer ticker.Stop()
@@ -238,6 +257,7 @@ func (g *Game) Run(directionChan chan int) {
 	}
 }
 
+// Update game state based on keyboard events.
 func (g *Game) ReactToKeyBoardEvents(directionChan chan int) {
 	defer close(directionChan)
 
@@ -275,6 +295,7 @@ func (g *Game) ReactToKeyBoardEvents(directionChan chan int) {
 	}
 }
 
+// Create a new game
 func NewGame(board *Board) *Game {
 	screen, err := tcell.NewScreen()
 
