@@ -2,10 +2,12 @@ package snake
 
 import (
 	"fmt"
-	"github.com/gdamore/tcell/v2"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
+
+	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -20,14 +22,16 @@ type Apple struct {
 }
 
 type State struct {
-	IsStart   bool
-	IsOver    bool
+	sync.Mutex
+	isStart   bool
+	isOver    bool
 	Direction int
 	Speed     time.Duration
 	Score     int
 }
 
 type Game struct {
+	sync.Mutex
 	State  State
 	Apple  *Apple
 	Board  *Board
@@ -110,26 +114,34 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 }
 
 func (g *Game) drawLoading() {
-	if !g.State.IsStart {
+	if !g.HasStarted() {
 		g.drawText(g.Board.width/2-12, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, "PRESS <ENTER> TO CONTINUE")
 	}
 }
 
 func (g *Game) drawEnding() {
-	if g.State.IsOver {
+	if g.HasEnded() {
 		g.drawText(g.Board.width/2-5, g.Board.height/2, g.Board.width/2+10, g.Board.height/2, "Game over")
 	}
 }
 
+func (g *Game) HasEnded() bool {
+	g.Lock()
+	defer g.Unlock()
+	return g.State.isOver
+}
+
 func (g *Game) over() {
-	g.State.IsOver = true
+	g.Lock()
+	defer g.Unlock()
+	g.State.isOver = true
 }
 
 func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 	row := y1
 	col := x1
 	style := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
-	for _, r := range []rune(text) {
+	for _, r := range text {
 		g.Screen.SetContent(col, row, r, nil, style)
 		col++
 		if col >= x2 {
@@ -210,7 +222,15 @@ func (g *Game) updateScreen() {
 }
 
 func (g *Game) Start() {
-	g.State.IsStart = true
+	g.State.Lock()
+	defer g.State.Unlock()
+	g.State.isStart = true
+}
+
+func (g *Game) HasStarted() bool {
+	g.State.Lock()
+	defer g.State.Unlock()
+	return g.State.isStart
 }
 
 func (g *Game) Run(directionChan chan int) {
@@ -224,7 +244,7 @@ func (g *Game) Run(directionChan chan int) {
 				g.State.Direction = newDirection
 			}
 		case <-ticker.C:
-			if !g.State.IsOver && g.State.IsStart {
+			if !g.HasEnded() && g.HasStarted() {
 				g.move()
 			}
 

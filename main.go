@@ -19,11 +19,11 @@ func eventLoop(game *snake.Game, directionChan chan int) {
 				os.Exit(0)
 			}
 
-			if !game.State.IsStart && event.Key() == tcell.KeyEnter {
+			if !game.HasStarted() && event.Key() == tcell.KeyEnter {
 				game.Start()
 			}
 
-			if !game.State.IsOver {
+			if !game.HasEnded() {
 				if event.Key() == tcell.KeyLeft {
 					directionChan <- snake.Left
 				}
