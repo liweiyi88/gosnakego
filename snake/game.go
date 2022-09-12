@@ -18,9 +18,7 @@ const (
 	Down
 )
 
-type Apple struct {
-	Coordinate
-}
+type Apple Coordinate
 
 type Game struct {
 	sync.Mutex
@@ -41,10 +39,7 @@ func init() {
 
 // Create a new apple.
 func newApple(x int, y int) *Apple {
-	return &Apple{Coordinate{
-		x,
-		y,
-	}}
+	return &Apple{x, y}
 }
 
 // Resize screen if terminal changed.
@@ -188,7 +183,7 @@ func (g *Game) drawBoard() {
 // Display the snake
 func (g *Game) drawSnake() {
 	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
-	for _, coordinates := range g.Snake.Body {
+	for _, coordinates := range *g.Snake {
 		g.screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
 	}
 }
