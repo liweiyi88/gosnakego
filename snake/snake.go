@@ -108,7 +108,7 @@ func (s *Snake) Move(direction int) {
 
 // Create a new snake with default position and length.
 func NewSnake() *Snake {
-	body := make(Snake, 0)
+	var body Snake
 	body = append(body, NewCoordinate(10, 7))
 	body = append(body, NewCoordinate(10, 8))
 	body = append(body, NewCoordinate(10, 9))
