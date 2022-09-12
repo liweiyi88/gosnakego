@@ -6,16 +6,14 @@ import (
 )
 
 // A snake is made of a slice of coordinate.
-type Snake struct {
-	Body []Coordinate
-}
+type Snake []Coordinate
 
 // Check if the snake can move to the given direction.
 func (s *Snake) canMove(board *Board, direction int) bool {
 	nextHeadPosition, err := s.nextHeadPosition(direction)
 
 	// If current body contains next head position, then return false.
-	for _, position := range s.Body {
+	for _, position := range *s {
 		if nextHeadPosition == position {
 			return false
 		}
@@ -46,13 +44,13 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinate, error) {
 
 	switch direction {
 	case Up:
-		head = NewCoordinate(s.Body[0].x, s.Body[0].y-1)
+		head = NewCoordinate((*s)[0].x, (*s)[0].y-1)
 	case Left:
-		head = NewCoordinate(s.Body[0].x-1, s.Body[0].y)
+		head = NewCoordinate((*s)[0].x-1, (*s)[0].y)
 	case Right:
-		head = NewCoordinate(s.Body[0].x+1, s.Body[0].y)
+		head = NewCoordinate((*s)[0].x+1, (*s)[0].y)
 	case Down:
-		head = NewCoordinate(s.Body[0].x, s.Body[0].y+1)
+		head = NewCoordinate((*s)[0].x, (*s)[0].y+1)
 	default:
 		err = errors.New("error: invalid direction") // In reality, It shouldn't reach to this line.
 	}
@@ -62,7 +60,7 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinate, error) {
 
 // Check if the snake has already had the coordinate.
 func (s *Snake) Contains(coordinate Coordinate) bool {
-	for _, body := range s.Body {
+	for _, body := range *s {
 		if coordinate == body {
 			return true
 		}
@@ -73,7 +71,7 @@ func (s *Snake) Contains(coordinate Coordinate) bool {
 
 // Check if the snake can eat the apple.
 func (s *Snake) CanEat(apple *Apple) bool {
-	headPosition := s.Body[0]
+	headPosition := (*s)[0]
 
 	return headPosition.x == apple.x && headPosition.y == apple.y
 }
@@ -81,14 +79,14 @@ func (s *Snake) CanEat(apple *Apple) bool {
 // The snake eat the apple and add apple's coordinate to snake body slice.
 func (s *Snake) Eat(apple *Apple) {
 	coordinate := NewCoordinate(apple.x, apple.y)
-	s.Body = append([]Coordinate{coordinate}, s.Body...)
+	(*s) = append([]Coordinate{coordinate}, (*s)...)
 }
 
 // Move the snake based on the direction.
 func (s *Snake) Move(direction int) {
 	newBody := make([]Coordinate, 0)
 
-	for i := 0; i < len(s.Body); i++ {
+	for i := 0; i < len((*s)); i++ {
 		var coordinates Coordinate
 		var err error
 		if i == 0 {
@@ -99,23 +97,23 @@ func (s *Snake) Move(direction int) {
 				return
 			}
 		} else {
-			coordinates = NewCoordinate(s.Body[i-1].x, s.Body[i-1].y)
+			coordinates = NewCoordinate((*s)[i-1].x, (*s)[i-1].y)
 		}
 
 		newBody = append(newBody, coordinates)
 	}
 
-	s.Body = newBody
+	*s = newBody
 }
 
 // Create a new snake with default position and length.
 func NewSnake() *Snake {
-	body := make([]Coordinate, 0)
+	var body Snake
 	body = append(body, NewCoordinate(10, 7))
 	body = append(body, NewCoordinate(10, 8))
 	body = append(body, NewCoordinate(10, 9))
 	body = append(body, NewCoordinate(10, 10))
 	body = append(body, NewCoordinate(9, 10))
 
-	return &Snake{Body: body}
+	return &body
 }
