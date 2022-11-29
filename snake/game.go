@@ -21,7 +21,7 @@ const (
 type Apple Coordinate
 
 type Game struct {
-	sync.Mutex
+	mu        sync.Mutex
 	direction int
 	speed     time.Duration
 	isStart   bool
@@ -44,16 +44,16 @@ func newApple(x int, y int) *Apple {
 
 // Resize screen if terminal changed.
 func (g *Game) resizeScreen() {
-	g.Lock()
+	g.mu.Lock()
 	g.screen.Sync()
-	g.Unlock()
+	g.mu.Unlock()
 }
 
 // Exit the game.
 func (g *Game) exit() {
-	g.Lock()
+	g.mu.Lock()
 	g.screen.Fini()
-	g.Unlock()
+	g.mu.Unlock()
 	os.Exit(0)
 }
 
@@ -61,8 +61,8 @@ func (g *Game) exit() {
 func (g *Game) setNewApplePosition() {
 	var availableCoordinates []Coordinate
 
-	for _, coordinate := range g.Board.ToCoordinates() {
-		if !g.Snake.Contains(coordinate) {
+	for _, coordinate := range g.Board.area {
+		if !g.Snake.contains(coordinate) {
 			availableCoordinates = append(availableCoordinates, coordinate)
 		}
 	}
@@ -71,7 +71,7 @@ func (g *Game) setNewApplePosition() {
 	g.Apple = newApple(applePosition.x, applePosition.y)
 }
 
-// Check if we need to change the direction based on the new direction
+// Check if we need to change the direction based on the new direction.
 func (g *Game) shouldUpdateDirection(direction int) bool {
 	if g.direction == direction {
 		return false
@@ -110,21 +110,29 @@ func (g *Game) drawEnding() {
 	}
 }
 
+// Determine should the game continue.
+func (g *Game) shouldContinue() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	return !g.isOver && g.isStart
+}
+
 // Check if the game has ended.
 func (g *Game) hasEnded() bool {
-	g.Lock()
-	defer g.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	return g.isOver
 }
 
 // Update the game's state to over.
 func (g *Game) over() {
-	g.Lock()
-	defer g.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.isOver = true
 }
 
-// Display text in terminal
+// Display text in terminal.
 func (g *Game) drawText(x1, y1, x2, y2 int, text string) {
 	row := y1
 	col := x1
@@ -180,7 +188,7 @@ func (g *Game) drawBoard() {
 	g.drawText(1, height+4, width, height+10, "Press arrow keys to control direction")
 }
 
-// Display the snake
+// Display the snake.
 func (g *Game) drawSnake() {
 	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
 	for _, coordinates := range *g.Snake {
@@ -188,14 +196,13 @@ func (g *Game) drawSnake() {
 	}
 }
 
-// Move the snake and set apple in the board.
-func (g *Game) move() {
+// Update game items' (snake and apple) state.
+func (g *Game) updateItemState() {
 	if g.Snake.canMove(g.Board, g.direction) {
-		g.Snake.
-		Move(g.direction)
+		g.Snake.move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
-			g.Snake.Eat(g.Apple)
+			g.Snake.eat(g.Apple)
 			g.score++
 			g.setNewApplePosition()
 		}
@@ -217,20 +224,20 @@ func (g *Game) updateScreen() {
 
 // Update game's state to start.
 func (g *Game) start() {
-	g.Lock()
-	defer g.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	g.isStart = true
 }
 
 // Check if the game has started.
 func (g *Game) hasStarted() bool {
-	g.Lock()
-	defer g.Unlock()
+	g.mu.Lock()
+	defer g.mu.Unlock()
 	return g.isStart
 }
 
-// Start the game.
-func (g *Game) Run(directionChan chan int) {
+// Run the game.
+func (g *Game) run(directionChan chan int) {
 	ticker := time.NewTicker(g.speed)
 	defer ticker.Stop()
 
@@ -238,13 +245,13 @@ func (g *Game) Run(directionChan chan int) {
 		select {
 		case newDirection := <-directionChan:
 			if g.shouldUpdateDirection(newDirection) {
-				g.Lock()
+				g.mu.Lock()
 				g.direction = newDirection
-				g.Unlock()
+				g.mu.Unlock()
 			}
 		case <-ticker.C:
-			if !g.hasEnded() && g.hasStarted() {
-				g.move()
+			if g.shouldContinue() {
+				g.updateItemState()
 			}
 
 			g.updateScreen()
@@ -253,7 +260,7 @@ func (g *Game) Run(directionChan chan int) {
 }
 
 // Update game state based on keyboard events.
-func (g *Game) ReactToKeyBoardEvents(directionChan chan int) {
+func (g *Game) handleKeyBoardEvents(directionChan chan int) {
 	defer close(directionChan)
 
 	for {
@@ -290,8 +297,8 @@ func (g *Game) ReactToKeyBoardEvents(directionChan chan int) {
 	}
 }
 
-// Create a new game
-func NewGame(board *Board) *Game {
+// Create a new game.
+func newGame(board *Board) *Game {
 	screen, err := tcell.NewScreen()
 
 	if err != nil {
@@ -306,7 +313,7 @@ func NewGame(board *Board) *Game {
 
 	game := &Game{
 		Board:     board,
-		Snake:     NewSnake(),
+		Snake:     newSnake(),
 		direction: Up,
 		speed:     time.Millisecond * 100,
 		screen:    screen,
@@ -316,4 +323,13 @@ func NewGame(board *Board) *Game {
 	game.updateScreen()
 
 	return game
+}
+
+// Start the snake game.
+func StartGame() {
+	directionChan := make(chan int, 10)
+	game := newGame(newBoard(50, 20))
+
+	go game.run(directionChan)
+	game.handleKeyBoardEvents(directionChan)
 }

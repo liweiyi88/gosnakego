@@ -44,13 +44,13 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinate, error) {
 
 	switch direction {
 	case Up:
-		head = NewCoordinate((*s)[0].x, (*s)[0].y-1)
+		head = newCoordinate((*s)[0].x, (*s)[0].y-1)
 	case Left:
-		head = NewCoordinate((*s)[0].x-1, (*s)[0].y)
+		head = newCoordinate((*s)[0].x-1, (*s)[0].y)
 	case Right:
-		head = NewCoordinate((*s)[0].x+1, (*s)[0].y)
+		head = newCoordinate((*s)[0].x+1, (*s)[0].y)
 	case Down:
-		head = NewCoordinate((*s)[0].x, (*s)[0].y+1)
+		head = newCoordinate((*s)[0].x, (*s)[0].y+1)
 	default:
 		err = errors.New("error: invalid direction") // In reality, It shouldn't reach to this line.
 	}
@@ -59,7 +59,7 @@ func (s *Snake) nextHeadPosition(direction int) (Coordinate, error) {
 }
 
 // Check if the snake has already had the coordinate.
-func (s *Snake) Contains(coordinate Coordinate) bool {
+func (s *Snake) contains(coordinate Coordinate) bool {
 	for _, body := range *s {
 		if coordinate == body {
 			return true
@@ -77,13 +77,13 @@ func (s *Snake) CanEat(apple *Apple) bool {
 }
 
 // The snake eat the apple and add apple's coordinate to snake body slice.
-func (s *Snake) Eat(apple *Apple) {
-	coordinate := NewCoordinate(apple.x, apple.y)
+func (s *Snake) eat(apple *Apple) {
+	coordinate := newCoordinate(apple.x, apple.y)
 	(*s) = append([]Coordinate{coordinate}, (*s)...)
 }
 
 // Move the snake based on the direction.
-func (s *Snake) Move(direction int) {
+func (s *Snake) move(direction int) {
 	newBody := make([]Coordinate, 0)
 
 	for i := 0; i < len((*s)); i++ {
@@ -97,7 +97,7 @@ func (s *Snake) Move(direction int) {
 				return
 			}
 		} else {
-			coordinates = NewCoordinate((*s)[i-1].x, (*s)[i-1].y)
+			coordinates = newCoordinate((*s)[i-1].x, (*s)[i-1].y)
 		}
 
 		newBody = append(newBody, coordinates)
@@ -107,13 +107,13 @@ func (s *Snake) Move(direction int) {
 }
 
 // Create a new snake with default position and length.
-func NewSnake() *Snake {
+func newSnake() *Snake {
 	var body Snake
-	body = append(body, NewCoordinate(10, 7))
-	body = append(body, NewCoordinate(10, 8))
-	body = append(body, NewCoordinate(10, 9))
-	body = append(body, NewCoordinate(10, 10))
-	body = append(body, NewCoordinate(9, 10))
+	body = append(body, newCoordinate(10, 7))
+	body = append(body, newCoordinate(10, 8))
+	body = append(body, newCoordinate(10, 9))
+	body = append(body, newCoordinate(10, 10))
+	body = append(body, newCoordinate(9, 10))
 
 	return &body
 }
