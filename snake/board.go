@@ -2,21 +2,17 @@ package snake
 
 type Board struct {
 	width, height int
+	area          []Coordinate
 }
 
 // Create a new board.
-func NewBoard(width int, height int) *Board {
-	return &Board{width, height}
-}
-
-// Transform width and height to two-dimensional slice.
-func (b *Board) ToCoordinates() []Coordinate {
-	var coordinates []Coordinate
-	for i := 1; i < b.width; i++ {
-		for j := 1; j < b.height; j++ {
-			coordinates = append(coordinates, NewCoordinate(i, j))
+func newBoard(width int, height int) *Board {
+	var area []Coordinate
+	for i := 1; i < width; i++ {
+		for j := 1; j < height; j++ {
+			area = append(area, newCoordinate(i, j))
 		}
 	}
 
-	return coordinates
+	return &Board{width, height, area}
 }
