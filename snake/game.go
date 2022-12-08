@@ -131,7 +131,7 @@ func (g *Game) over() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.isOver = true
-	g.sound.Play()
+	g.sound.GameOver()
 }
 
 // Display text in terminal.
@@ -204,6 +204,8 @@ func (g *Game) updateItemState() {
 		g.Snake.move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
+			// separate goroutine to avoid snake seem stuck
+			go g.sound.Hiss()
 			g.Snake.eat(g.Apple)
 			g.score++
 			g.setNewApplePosition()
@@ -255,7 +257,6 @@ func (g *Game) run(directionChan chan int) {
 			if g.shouldContinue() {
 				g.updateItemState()
 			}
-
 			g.updateScreen()
 		}
 	}
