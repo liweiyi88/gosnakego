@@ -12,22 +12,32 @@ import (
 const fileGameOver = "gameOver.mp3"
 const fileHiss = "hiss.mp3"
 
-type Sound struct {
+type Sound interface {
+	GameOver()
+	Hiss()
+}
+
+type Muted struct{}
+
+type UnMuted struct {
 	gameOver *beep.Buffer
 	hiss     *beep.Buffer
 }
 
-func NewSound() (Sound, error) {
+func NewSound(silent bool) (Sound, error) {
+	if silent {
+		return Muted{}, nil
+	}
 	hiss, _, err := load(fileHiss)
 	if err != nil {
-		return Sound{}, err
+		return UnMuted{}, err
 	}
 	gameOver, format, err := load(fileGameOver)
 	if err != nil {
-		return Sound{}, err
+		return UnMuted{}, err
 	}
 	speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	return Sound{
+	return UnMuted{
 		gameOver: gameOver,
 		hiss:     hiss,
 	}, nil
@@ -48,12 +58,13 @@ func load(file string) (*beep.Buffer, beep.Format, error) {
 	return buffer, format, nil
 }
 
-func (s Sound) GameOver() {
+func (s UnMuted) GameOver() {
 	play(s.gameOver)
 }
 
-func (s Sound) Hiss() {
-	play(s.hiss)
+func (s UnMuted) Hiss() {
+	// separate goroutine to avoid snake seem stuck
+	go play(s.hiss)
 }
 
 func play(buffer *beep.Buffer) {
@@ -64,3 +75,7 @@ func play(buffer *beep.Buffer) {
 	})))
 	<-done
 }
+
+func (s Muted) GameOver() {}
+
+func (s Muted) Hiss() {}

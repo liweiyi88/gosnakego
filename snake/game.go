@@ -204,8 +204,7 @@ func (g *Game) updateItemState() {
 		g.Snake.move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
-			// separate goroutine to avoid snake seem stuck
-			go g.sound.Hiss()
+			g.sound.Hiss()
 			g.Snake.eat(g.Apple)
 			g.score++
 			g.setNewApplePosition()
@@ -301,7 +300,7 @@ func (g *Game) handleKeyBoardEvents(directionChan chan int) {
 }
 
 // Create a new game.
-func newGame(board *Board) *Game {
+func newGame(board *Board, silent bool) *Game {
 	screen, err := tcell.NewScreen()
 
 	if err != nil {
@@ -313,7 +312,7 @@ func newGame(board *Board) *Game {
 
 	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	screen.SetStyle(defStyle)
-	sound, err := NewSound()
+	sound, err := NewSound(silent)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
@@ -333,9 +332,9 @@ func newGame(board *Board) *Game {
 }
 
 // Start the snake game.
-func StartGame() {
+func StartGame(silent bool) {
 	directionChan := make(chan int, 10)
-	game := newGame(newBoard(50, 20))
+	game := newGame(newBoard(50, 20), silent)
 
 	go game.run(directionChan)
 	game.handleKeyBoardEvents(directionChan)
