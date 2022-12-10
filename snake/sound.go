@@ -1,12 +1,12 @@
 package snake
 
 import (
-	"os"
 	"time"
 
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
+	"github.com/liweiyi88/gosnakego/assets"
 )
 
 const fileGameOver = "gameOver.mp3"
@@ -17,12 +17,12 @@ type Sound struct {
 	hiss     *beep.Buffer
 }
 
-func NewSound(base string) (Sound, error) {
-	hiss, _, err := load(base + "/" + fileHiss)
+func NewSound() (Sound, error) {
+	hiss, _, err := load(fileHiss)
 	if err != nil {
 		return Sound{}, err
 	}
-	gameOver, format, err := load(base + "/" + fileGameOver)
+	gameOver, format, err := load(fileGameOver)
 	if err != nil {
 		return Sound{}, err
 	}
@@ -33,8 +33,8 @@ func NewSound(base string) (Sound, error) {
 	}, nil
 }
 
-func load(path string) (*beep.Buffer, beep.Format, error) {
-	f, err := os.Open(path)
+func load(file string) (*beep.Buffer, beep.Format, error) {
+	f, err := assets.Assets.Open(file)
 	if err != nil {
 		return nil, beep.Format{}, err
 	}

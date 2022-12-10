@@ -301,7 +301,7 @@ func (g *Game) handleKeyBoardEvents(directionChan chan int) {
 }
 
 // Create a new game.
-func newGame(assetsPath string, board *Board) *Game {
+func newGame(board *Board) *Game {
 	screen, err := tcell.NewScreen()
 
 	if err != nil {
@@ -313,7 +313,7 @@ func newGame(assetsPath string, board *Board) *Game {
 
 	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	screen.SetStyle(defStyle)
-	sound, err := NewSound(assetsPath)
+	sound, err := NewSound()
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
@@ -333,9 +333,9 @@ func newGame(assetsPath string, board *Board) *Game {
 }
 
 // Start the snake game.
-func StartGame(assetsPath string) {
+func StartGame() {
 	directionChan := make(chan int, 10)
-	game := newGame(assetsPath, newBoard(50, 20))
+	game := newGame(newBoard(50, 20))
 
 	go game.run(directionChan)
 	game.handleKeyBoardEvents(directionChan)
