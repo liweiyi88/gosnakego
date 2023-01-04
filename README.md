@@ -34,4 +34,10 @@ Start the game with the command
 ```
 $ gosnakego
 ```
+
+or start the game with silent mode
+```
+$ gosnakego --silent
+```
+
 and use arrow keys to control the direction.
