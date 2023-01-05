@@ -1,5 +1,5 @@
 <p align="center">
-<img src="assets/logo.png" alt="gosnakego" title="gosnakego" />
+<img src="assets/logo_snake.png" alt="gosnakego" title="gosnakego" />
 </p>
 A snake game written in Go
 
