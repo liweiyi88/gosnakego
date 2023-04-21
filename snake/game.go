@@ -18,7 +18,11 @@ const (
 	Down
 )
 
-type Apple Coordinate
+type Apple Position
+
+func (apple *Apple) Position() Position {
+	return newPosition(apple.x, apple.y)
+}
 
 type Game struct {
 	mu        sync.Mutex
@@ -60,15 +64,15 @@ func (g *Game) exit() {
 
 // Set the new apple's position in the board.
 func (g *Game) setNewApplePosition() {
-	var availableCoordinates []Coordinate
+	var availablePositions []Position
 
-	for _, coordinate := range g.Board.area {
-		if !g.Snake.contains(coordinate) {
-			availableCoordinates = append(availableCoordinates, coordinate)
+	for _, position := range g.Board.area {
+		if !g.Snake.contains(position) {
+			availablePositions = append(availablePositions, position)
 		}
 	}
 
-	applePosition := availableCoordinates[rand.Intn(len(availableCoordinates))]
+	applePosition := availablePositions[rand.Intn(len(availablePositions))]
 	g.Apple = newApple(applePosition.x, applePosition.y)
 }
 
@@ -193,8 +197,13 @@ func (g *Game) drawBoard() {
 // Display the snake.
 func (g *Game) drawSnake() {
 	snakeStyle := tcell.StyleDefault.Background(tcell.ColorGreen)
-	for _, coordinates := range *g.Snake {
-		g.screen.SetContent(coordinates.x, coordinates.y, tcell.RuneCkBoard, nil, snakeStyle)
+
+	current := g.Snake.head
+
+	for current != nil {
+		g.screen.SetContent(current.x, current.y, tcell.RuneCkBoard, nil, snakeStyle)
+
+		current = current.next
 	}
 }
 
@@ -205,7 +214,7 @@ func (g *Game) updateItemState() {
 
 		if g.Snake.CanEat(g.Apple) {
 			g.sound.Hiss()
-			g.Snake.eat(g.Apple)
+			g.Snake.Eat(g.Apple)
 			g.score++
 			g.setNewApplePosition()
 		}
@@ -318,7 +327,7 @@ func newGame(board *Board, silent bool) *Game {
 	}
 	game := &Game{
 		Board:     board,
-		Snake:     newSnake(),
+		Snake:     NewSnake(),
 		direction: Up,
 		speed:     time.Millisecond * 100,
 		screen:    screen,

@@ -1,69 +1,63 @@
 package snake
 
-import (
-	"errors"
-	"log"
-)
+type node struct {
+	Position
+	next *node
+}
 
-// A snake is made of a slice of coordinate.
-type Snake []Coordinate
+type Snake struct {
+	head *node
+}
 
 // Check if the snake can move to the given direction.
 func (s *Snake) canMove(board *Board, direction int) bool {
-	nextHeadPosition, err := s.nextHeadPosition(direction)
+	position := s.nextHeadPosition(direction)
 
 	// If current body contains next head position, then return false.
-	for _, position := range *s {
-		if nextHeadPosition == position {
-			return false
-		}
-	}
-
-	if err != nil {
-		log.Fatalln(err.Error())
+	if s.contains(position) {
+		return false
 	}
 
 	switch direction {
 	case Up:
-		return nextHeadPosition.y > 0
+		return position.y > 0
 	case Left:
-		return nextHeadPosition.x > 0
+		return position.x > 0
 	case Right:
-		return nextHeadPosition.x < board.width
+		return position.x < board.width
 	case Down:
-		return nextHeadPosition.y < board.height
+		return position.y < board.height
 	}
 
 	return true
 }
 
 // The next snake head position in the board.
-func (s *Snake) nextHeadPosition(direction int) (Coordinate, error) {
-	var head Coordinate
-	var err error
-
+func (s *Snake) nextHeadPosition(direction int) Position {
 	switch direction {
 	case Up:
-		head = newCoordinate((*s)[0].x, (*s)[0].y-1)
+		return newPosition(s.head.x, s.head.y-1)
 	case Left:
-		head = newCoordinate((*s)[0].x-1, (*s)[0].y)
+		return newPosition(s.head.x-1, s.head.y)
 	case Right:
-		head = newCoordinate((*s)[0].x+1, (*s)[0].y)
+		return newPosition(s.head.x+1, s.head.y)
 	case Down:
-		head = newCoordinate((*s)[0].x, (*s)[0].y+1)
+		return newPosition(s.head.x, s.head.y+1)
 	default:
-		err = errors.New("error: invalid direction") // In reality, It shouldn't reach to this line.
+		panic("error: invalid direction") // In reality, It shouldn't reach to this line.
 	}
-
-	return head, err
 }
 
-// Check if the snake has already had the coordinate.
-func (s *Snake) contains(coordinate Coordinate) bool {
-	for _, body := range *s {
-		if coordinate == body {
+// Check if the snake has already had the position.
+func (s *Snake) contains(position Position) bool {
+	current := s.head
+
+	for current != nil {
+		if current.x == position.x && current.y == position.y {
 			return true
 		}
+
+		current = current.next
 	}
 
 	return false
@@ -71,49 +65,46 @@ func (s *Snake) contains(coordinate Coordinate) bool {
 
 // Check if the snake can eat the apple.
 func (s *Snake) CanEat(apple *Apple) bool {
-	headPosition := (*s)[0]
-
-	return headPosition.x == apple.x && headPosition.y == apple.y
+	return s.head.x == apple.x && s.head.y == apple.y
 }
 
-// The snake eat the apple and add apple's coordinate to snake body slice.
-func (s *Snake) eat(apple *Apple) {
-	coordinate := newCoordinate(apple.x, apple.y)
-	(*s) = append([]Coordinate{coordinate}, (*s)...)
+// The snake Eat the apple and add apple's position to snake body slice.
+func (s *Snake) Eat(apple *Apple) {
+	s.add(apple.Position())
+}
+
+// Add new position to the head.
+func (s *Snake) add(position Position) *Snake {
+	s.head = &node{
+		Position: position,
+		next:     s.head,
+	}
+
+	return s
 }
 
 // Move the snake based on the direction.
 func (s *Snake) move(direction int) {
-	newBody := make([]Coordinate, 0)
+	position := s.nextHeadPosition(direction)
+	s.add(position)
 
-	for i := 0; i < len((*s)); i++ {
-		var coordinates Coordinate
-		var err error
-		if i == 0 {
-			coordinates, err = s.nextHeadPosition(direction)
+	if s.head.next.next != nil {
+		current := s.head
 
-			if err != nil {
-				log.Fatalln(err.Error())
-				return
-			}
-		} else {
-			coordinates = newCoordinate((*s)[i-1].x, (*s)[i-1].y)
+		for ; current.next.next != nil; current = current.next {
 		}
 
-		newBody = append(newBody, coordinates)
+		current.next = nil
 	}
-
-	*s = newBody
 }
 
 // Create a new snake with default position and length.
-func newSnake() *Snake {
-	var body Snake
-	body = append(body, newCoordinate(10, 7))
-	body = append(body, newCoordinate(10, 8))
-	body = append(body, newCoordinate(10, 9))
-	body = append(body, newCoordinate(10, 10))
-	body = append(body, newCoordinate(9, 10))
+func NewSnake() *Snake {
+	snake := &Snake{}
 
-	return &body
+	return snake.add(newPosition(9, 10)).
+		add(newPosition(10, 10)).
+		add(newPosition(10, 9)).
+		add(newPosition(10, 8)).
+		add(newPosition(10, 7))
 }
