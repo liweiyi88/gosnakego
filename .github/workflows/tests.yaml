@@ -19,4 +19,5 @@ jobs:
           go-version: ${{ matrix.go-version }}
       - uses: actions/checkout@v3
       - run: |
+          sudo apt install libasound2-dev
           go test -v -cover ./... -coverprofile coverage.out -coverpkg ./...
