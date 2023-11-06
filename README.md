@@ -3,7 +3,7 @@
 </p>
 A snake game written in Go
 
-![snake](https://user-images.githubusercontent.com/7248260/149492282-6588ead3-954d-42a4-9871-dc08cf833920.gif)
+![snake](https://github.com/liweiyi88/gosnakego/blob/main/assets/gosnakego.gif)
 
 ## Installation
 ### Get the binary
