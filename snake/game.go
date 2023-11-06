@@ -315,11 +315,9 @@ func (g *Game) hasStarted() bool {
 
 // Run the game.
 func (g *Game) run(directionChan chan int, gameMode chan GameMode) {
-	if !g.hasStarted() {
-		for newMode := range gameMode {
-			g.SetMode(newMode)
-			g.updateScreen()
-		}
+	for newMode := range gameMode {
+		g.SetMode(newMode)
+		g.updateScreen()
 	}
 
 	g.updateScreen()
