@@ -7,10 +7,10 @@ A snake game written in Go
 
 ## Installation
 ### Get the binary
-You can get the binary executable for your operating system from the [releases page](https://github.com/liweiyi88/gosnakego/releases)
+You can obtain the binary executable for your operating system from the [releases page](https://github.com/liweiyi88/gosnakego/releases)
 
 ## How to play
-Make sure you download the binary and move it under a "executable path" (e.g. `/usr/local/bin/gosnakego`), then start the game with the command
+Make sure you download the binary and move it to an "executable path" (e.g. `/usr/local/bin/gosnakego`), then start the game with the command
 ```
 $ gosnakego
 ```
