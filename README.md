@@ -7,32 +7,11 @@ A snake game written in Go
 
 ## Installation
 ### Get the binary
-You can get the binary executable for your operating system from the [release page](https://github.com/liweiyi88/gosnakego/releases)
-
-Windows: `gosnakego_windows_amd64.exe`
-MacOS: `gosnakego_darwin_amd64`
-
-For MacOS, you can also run the following command to download the binary.
-```
-$ sudo wget https://github.com/liweiyi88/gosnakego/releases/download/v0.3.0/gosnakego_darwin_amd64 -O /usr/local/bin/gosnakego
-$ sudo chmod +x /usr/local/bin/gosnakego
-```
-
-### Build yourself (For linux user)
-```
-$ git clone https://github.com/liweiyi88/gosnakego.git
-$ make install
-```
+You can get the binary executable for your operating system from the [releases page](https://github.com/liweiyi88/gosnakego/releases)
 
 ## How to play
-Start the game with the command
+Make sure you download the binary and move it under a "executable path" (e.g. `/usr/local/bin/gosnakego`), then start the game with the command
 ```
 $ gosnakego
 ```
-
-or start the game with silent mode
-```
-$ gosnakego --silent
-```
-
 and use arrow keys to control the direction.
