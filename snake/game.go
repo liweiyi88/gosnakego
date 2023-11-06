@@ -3,6 +3,7 @@ package snake
 import (
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 	"sync"
@@ -10,6 +11,16 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 )
+
+type GameMode int64
+
+const (
+	EasyMode GameMode = iota
+	NormalMode
+	HardMode
+)
+
+const minSpeed = 50
 
 const (
 	Up = iota
@@ -25,25 +36,55 @@ func (apple *Apple) Position() Position {
 }
 
 type Game struct {
-	mu        sync.Mutex
-	direction int
-	speed     time.Duration
-	isStart   bool
-	isOver    bool
-	score     int
-	Apple     *Apple
-	Board     *Board
-	Snake     *Snake
-	screen    tcell.Screen
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
+	mu             sync.Mutex
+	direction      int
+	isStart        bool
+	isOver         bool
+	score          int
+	canSpeedChange bool
+	mode           GameMode
+	Apple          *Apple
+	Board          *Board
+	Snake          *Snake
+	screen         tcell.Screen
 }
 
 // Create a new apple.
 func newApple(x int, y int) *Apple {
 	return &Apple{x, y}
+}
+
+func (g *Game) speed() time.Duration {
+	switch g.mode {
+	case EasyMode:
+		return time.Millisecond * 500
+	case NormalMode:
+		return time.Millisecond * 100
+	case HardMode:
+		return time.Millisecond * time.Duration(math.Max(minSpeed, float64(100-3*g.score)))
+	default:
+		return time.Millisecond * 100
+	}
+}
+
+// Should we update speed when in hard mode.
+func (g *Game) shouldUpdateSpeed() bool {
+	if g.mode != HardMode {
+		return false
+	}
+
+	if !g.canSpeedChange {
+		return false
+	}
+
+	if g.score%3 == 0 {
+		g.mu.Lock()
+		g.canSpeedChange = false
+		g.mu.Unlock()
+		return true
+	}
+
+	return false
 }
 
 // Resize screen if terminal changed.
@@ -103,7 +144,27 @@ func (g *Game) shouldUpdateDirection(direction int) bool {
 // Display the loading screen.
 func (g *Game) drawLoading() {
 	if !g.hasStarted() {
-		g.drawText(g.Board.width/2-12, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, "PRESS <ENTER> TO CONTINUE")
+		g.drawText(g.Board.width/2-8, g.Board.height/2-4, g.Board.width/2+17, g.Board.height/2-4, "PRESS <ENTER> TO CONTINUE")
+
+		easy := "  Easy"
+		if g.mode == EasyMode {
+			easy = "> Easy"
+		}
+
+		g.drawText(g.Board.width/2-10, g.Board.height/2-2, g.Board.width/2+13, g.Board.height/2-2, easy)
+
+		normal := "  Normal"
+		if g.mode == NormalMode {
+			normal = "> Normal"
+		}
+
+		g.drawText(g.Board.width/2-10, g.Board.height/2-1, g.Board.width/2+13, g.Board.height/2-1, normal)
+
+		hard := "  Hard"
+		if g.mode == HardMode {
+			hard = "> Hard"
+		}
+		g.drawText(g.Board.width/2-10, g.Board.height/2, g.Board.width/2+13, g.Board.height/2, hard)
 	}
 }
 
@@ -213,6 +274,7 @@ func (g *Game) updateItemState() {
 		if g.Snake.CanEat(g.Apple) {
 			g.Snake.Eat(g.Apple)
 			g.score++
+			g.canSpeedChange = true
 			g.setNewApplePosition()
 		}
 	} else {
@@ -238,6 +300,12 @@ func (g *Game) start() {
 	g.isStart = true
 }
 
+func (g *Game) SetMode(mode GameMode) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.mode = mode
+}
+
 // Check if the game has started.
 func (g *Game) hasStarted() bool {
 	g.mu.Lock()
@@ -246,8 +314,16 @@ func (g *Game) hasStarted() bool {
 }
 
 // Run the game.
-func (g *Game) run(directionChan chan int) {
-	ticker := time.NewTicker(g.speed)
+func (g *Game) run(directionChan chan int, gameMode chan GameMode) {
+	if !g.hasStarted() {
+		for newMode := range gameMode {
+			g.SetMode(newMode)
+			g.updateScreen()
+		}
+	}
+
+	g.updateScreen()
+	ticker := time.NewTicker(g.speed())
 	defer ticker.Stop()
 
 	for {
@@ -262,13 +338,18 @@ func (g *Game) run(directionChan chan int) {
 			if g.shouldContinue() {
 				g.updateItemState()
 			}
+
+			if g.shouldUpdateSpeed() {
+				ticker.Reset(g.speed())
+			}
+
 			g.updateScreen()
 		}
 	}
 }
 
 // Update game state based on keyboard events.
-func (g *Game) handleKeyBoardEvents(directionChan chan int) {
+func (g *Game) handleKeyBoardEvents(directionChan chan int, gameMode chan GameMode) {
 	defer close(directionChan)
 
 	for {
@@ -282,9 +363,26 @@ func (g *Game) handleKeyBoardEvents(directionChan chan int) {
 
 			if !g.hasStarted() && event.Key() == tcell.KeyEnter {
 				g.start()
+				close(gameMode)
 			}
 
-			if !g.hasEnded() {
+			if !g.hasStarted() {
+				if event.Key() == tcell.KeyUp {
+					if g.mode == HardMode {
+						gameMode <- NormalMode
+					} else if g.mode == NormalMode {
+						gameMode <- EasyMode
+					}
+				} else if event.Key() == tcell.KeyDown {
+					if g.mode == EasyMode {
+						gameMode <- NormalMode
+					} else if g.mode == NormalMode {
+						gameMode <- HardMode
+					}
+				}
+			}
+
+			if g.hasStarted() && !g.hasEnded() {
 				if event.Key() == tcell.KeyLeft {
 					directionChan <- Left
 				}
@@ -324,8 +422,8 @@ func newGame(board *Board) *Game {
 	game := &Game{
 		Board:     board,
 		Snake:     NewSnake(),
-		direction: Up,
-		speed:     time.Millisecond * 100,
+		direction: Right,
+		mode:      NormalMode,
 		screen:    screen,
 	}
 
@@ -338,8 +436,9 @@ func newGame(board *Board) *Game {
 // Start the snake game.
 func StartGame() {
 	directionChan := make(chan int, 10)
+	gameMode := make(chan GameMode, 1)
 	game := newGame(newBoard(50, 20))
 
-	go game.run(directionChan)
-	game.handleKeyBoardEvents(directionChan)
+	go game.run(directionChan, gameMode)
+	game.handleKeyBoardEvents(directionChan, gameMode)
 }

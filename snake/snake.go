@@ -102,9 +102,9 @@ func (s *Snake) move(direction int) {
 func NewSnake() *Snake {
 	snake := &Snake{}
 
-	return snake.add(newPosition(9, 10)).
-		add(newPosition(10, 10)).
-		add(newPosition(10, 9)).
-		add(newPosition(10, 8)).
-		add(newPosition(10, 7))
+	return snake.add(newPosition(10, 12)).
+		add(newPosition(11, 12)).
+		add(newPosition(12, 12)).
+		add(newPosition(13, 12)).
+		add(newPosition(14, 12))
 }
