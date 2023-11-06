@@ -35,7 +35,6 @@ type Game struct {
 	Board     *Board
 	Snake     *Snake
 	screen    tcell.Screen
-	sound     Sound
 }
 
 func init() {
@@ -135,7 +134,6 @@ func (g *Game) over() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.isOver = true
-	g.sound.GameOver()
 }
 
 // Display text in terminal.
@@ -213,7 +211,6 @@ func (g *Game) updateItemState() {
 		g.Snake.move(g.direction)
 
 		if g.Snake.CanEat(g.Apple) {
-			g.sound.Hiss()
 			g.Snake.Eat(g.Apple)
 			g.score++
 			g.setNewApplePosition()
@@ -309,7 +306,7 @@ func (g *Game) handleKeyBoardEvents(directionChan chan int) {
 }
 
 // Create a new game.
-func newGame(board *Board, silent bool) *Game {
+func newGame(board *Board) *Game {
 	screen, err := tcell.NewScreen()
 
 	if err != nil {
@@ -321,7 +318,6 @@ func newGame(board *Board, silent bool) *Game {
 
 	defStyle := tcell.StyleDefault.Background(tcell.ColorBlack).Foreground(tcell.ColorWhite)
 	screen.SetStyle(defStyle)
-	sound, err := NewSound(silent)
 	if err != nil {
 		log.Fatalf("%+v", err)
 	}
@@ -331,7 +327,6 @@ func newGame(board *Board, silent bool) *Game {
 		direction: Up,
 		speed:     time.Millisecond * 100,
 		screen:    screen,
-		sound:     sound,
 	}
 
 	game.setNewApplePosition()
@@ -341,9 +336,9 @@ func newGame(board *Board, silent bool) *Game {
 }
 
 // Start the snake game.
-func StartGame(silent bool) {
+func StartGame() {
 	directionChan := make(chan int, 10)
-	game := newGame(newBoard(50, 20), silent)
+	game := newGame(newBoard(50, 20))
 
 	go game.run(directionChan)
 	game.handleKeyBoardEvents(directionChan)
